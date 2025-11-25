@@ -1,11 +1,32 @@
--------------------------------
--- OPTIMIZED FULL UI FISHIT
--------------------------------
+----------------------------------------------------------------
+-- ISLAND COORDS
+----------------------------------------------------------------
+local islandCoords = {
+    ["01"] = { name = "Weather Machine", position = Vector3.new(-1471, -3, 1929) },
+    ["02"] = { name = "Esoteric Depths", position = Vector3.new(3157, -1303, 1439) },
+    ["03"] = { name = "Tropical Grove", position = Vector3.new(-2038, 3, 3650) },
+    ["13"] = { name = "Ancient Jungle", position = Vector3.new(1456.287842, 8.218277, -497.421021) },
+    ["13"] = { name = "Sacred Temple", position = Vector3.new(1412.286011, 4.375000, -624.963562) },
+    ["13"] = { name = "Ancient Ruin", position = Vector3.new(5979.126465, -503.226318, 4576.081055) },
+    ["13"] = { name = "Sishypus Statue", position = Vector3.new(-3792, -135, -986) },
+    ["04"] = { name = "Stingray Shores", position = Vector3.new(-32, 4, 2773) },
+    ["05"] = { name = "Kohana Volcano", position = Vector3.new(-519, 24, 189) },
+    ["06"] = { name = "Coral Reefs", position = Vector3.new(-3095, 1, 2177) },
+    ["07"] = { name = "Crater Island", position = Vector3.new(968, 1, 4854) },
+    ["08"] = { name = "Kohana", position = Vector3.new(-658, 3, 719) },
+    ["09"] = { name = "Winter Fest", position = Vector3.new(1611, 4, 3280) },
+    ["10"] = { name = "Isoteric Island", position = Vector3.new(1987, 4, 1400) },
+    ["11"] = { name = "Treasure Hall", position = Vector3.new(-3600, -267, -1558) },
+    ["12"] = { name = "Lost Shore", position = Vector3.new(-3663, 38, -989) }
+}
 
+----------------------------------------------------------------
+-- SERVICES
+----------------------------------------------------------------
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -15,86 +36,252 @@ local net = rs.Packages._Index["sleitnick_net@0.2.0"].net
 local equip = net["RE/EquipToolFromHotbar"] or net["RE/EquipFishingRod"]
 local finishMini = net["RE/FishingCompleted"]
 
--------------------------------
--- SETTINGS
--------------------------------
 local FishingSettings = {
     Enabled = false,
-    Mode = "Perfect", -- Normal / Perfect
+    Mode = "Perfect",
+    modeClick = false,
+    modeAuto = true,
 }
 
 local casting = false
-local guiVisible = true
-local con
-
--------------------------------
--- UI CREATION
--------------------------------
-local gui = Instance.new("ScreenGui")
-gui.Name = "DRM_FISHIT"
-gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
-
--- Main Frame
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 320, 0, 200)
-Frame.Position = UDim2.new(0.5, -160, 0.4, -100)
-Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Frame.BorderSizePixel = 0
-Frame.ClipsDescendants = true
-Frame.Parent = gui
-
-local UICornerFrame = Instance.new("UICorner", Frame)
-UICornerFrame.CornerRadius = UDim.new(0, 12)
-
--- Header
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Header.BorderSizePixel = 0
-Header.Parent = Frame
-
-local UICornerHeader = Instance.new("UICorner", Header)
-UICornerHeader.CornerRadius = UDim.new(0,12)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -70, 1, 0)
-Title.Position = UDim2.new(0,10,0,0)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.Text = "DRM – FISHIT"
-Title.Parent = Header
-
--- Close & Minimize buttons
-local function createButton(parent, size, pos, text, color)
-    local btn = Instance.new("TextButton")
-    btn.Size = size
-    btn.Position = pos
-    btn.Text = text
-    btn.BackgroundColor3 = color
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 20
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0,6)
-    btn.Parent = parent
-    return btn
+local vu = game:GetService("VirtualUser")
+local function FakeClick()
+    vu:CaptureController()
+    vu:ClickButton1(Vector2.new())
 end
 
-local CloseBtn = createButton(Header, UDim2.new(0,35,0,35), UDim2.new(1,-35,0,0),"X", Color3.fromRGB(120,40,40))
-local MinBtn = createButton(Header, UDim2.new(0,35,0,35), UDim2.new(1,-70,0,0),"-", Color3.fromRGB(70,70,70))
+----------------------------------------------------------------
+-- HELPERS
+----------------------------------------------------------------
 
--- Toggle AutoCast
-local ToggleBtn = createButton(Frame, UDim2.new(1,-20,0,45), UDim2.new(0,10,0,50),"AutoCast: OFF", Color3.fromRGB(50,50,50))
+local function AddCorner(obj, rad)
+    local u = Instance.new("UICorner")
+    u.CornerRadius = UDim.new(0, rad or 12)
+    u.Parent = obj
+end
 
--- Mode Button
-local ModeBtn = createButton(Frame, UDim2.new(1,-20,0,45), UDim2.new(0,10,0,105),"Mode: Perfect", Color3.fromRGB(50,50,50))
+local function Tween(obj, props, dur)
+    TweenService:Create(obj, TweenInfo.new(dur or 0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+end
 
--------------------------------
--- DRAGGING SYSTEM
--------------------------------
+local function HoverEffect(btn)
+    local normal = btn.BackgroundTransparency
+    btn.MouseEnter:Connect(function()
+        Tween(btn, {BackgroundTransparency = normal + 0.1}, 0.15)
+    end)
+    btn.MouseLeave:Connect(function()
+        Tween(btn, {BackgroundTransparency = normal}, 0.15)
+    end)
+end
+
+----------------------------------------------------------------
+-- DARK MODE + SMALL UI
+----------------------------------------------------------------
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "DRM_FISHIT"
+gui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame", gui)
+Frame.Size = UDim2.new(0, 224, 0, 225)
+Frame.Position = UDim2.new(0.5, -112, 0.4, -70)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.BorderSizePixel = 0
+AddCorner(Frame, 14)
+
+local Header = Instance.new("Frame", Frame)
+Header.Size = UDim2.new(1, 0, 0, 31)
+Header.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Header.BorderSizePixel = 0
+AddCorner(Header, 14)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -56, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(220, 220, 220)
+Title.TextSize = 14
+Title.Text = "DRM – FISHIT"
+Title.BackgroundTransparency = 1
+
+local CloseBtn = Instance.new("TextButton", Header)
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -30, 0, 2)
+CloseBtn.Text = "×"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 20
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+AddCorner(CloseBtn, 10)
+HoverEffect(CloseBtn)
+
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 28, 0, 28)
+MinBtn.Position = UDim2.new(1, -60, 0, 2)
+MinBtn.Text = "–"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 22
+MinBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+MinBtn.TextColor3 = Color3.fromRGB(230,230,230)
+AddCorner(MinBtn, 10)
+HoverEffect(MinBtn)
+
+----------------------------------------------------------------
+-- BODY
+----------------------------------------------------------------
+local Body = Instance.new("Frame", Frame)
+Body.Size = UDim2.new(1, 0, 1, -31)
+Body.Position = UDim2.new(0, 0, 0, 31)
+Body.BackgroundTransparency = 1
+Body.ZIndex = 2
+
+----------------------------------------------------------------
+-- BUTTON CREATOR (small)
+----------------------------------------------------------------
+local function CreateButton(name, posY, color)
+    local b = Instance.new("TextButton", Body)
+    b.Size = UDim2.new(1, -14, 0, 28)
+    b.Position = UDim2.new(0, 7, 0, posY)
+    b.BackgroundColor3 = color
+    b.BackgroundTransparency = 0.15
+    b.TextColor3 = Color3.fromRGB(230, 230, 230)
+    b.TextSize = 14
+    b.Font = Enum.Font.GothamMedium
+    AddCorner(b, 8)
+    HoverEffect(b)
+    return b
+end
+
+----------------------------------------------------------------
+-- BUTTONS
+----------------------------------------------------------------
+local ToggleBtn = CreateButton("Toggle", 7, Color3.fromRGB(60,60,60))
+ToggleBtn.Text = "AutoCast: OFF"
+
+local ModeBtn = CreateButton("Mode", 39, Color3.fromRGB(40,120,40))
+ModeBtn.Text = "Mode: Perfect"
+
+local AntiAFKBtn = CreateButton("AntiAFK", 71, Color3.fromRGB(60,60,60))
+AntiAFKBtn.Text = "Anti AFK: OFF"
+local AntiAFKBtnEnabled = false
+
+local ClickModeBtn = CreateButton("ClickMode", 103, Color3.fromRGB(40,120,40))
+ClickModeBtn.Text = "Mode: AUTO"
+
+ClickModeBtn.MouseButton1Click:Connect(function()
+    FishingSettings.modeClick = not FishingSettings.modeClick
+    FishingSettings.modeAuto = not FishingSettings.modeClick
+
+    if FishingSettings.modeClick then
+        ClickModeBtn.Text = "Mode: CLICK"
+        Tween(ClickModeBtn, {BackgroundColor3 = Color3.fromRGB(90,60,60)}, 0.2)
+    else
+        ClickModeBtn.Text = "Mode: FIRESERVER"
+        Tween(ClickModeBtn, {BackgroundColor3 = Color3.fromRGB(40,120,40)}, 0.2)
+    end
+end)
+
+
+----------------------------------------------------------------
+-- DROPDOWN TELEPORT
+----------------------------------------------------------------
+local DropBtn = CreateButton("Drop", 135, Color3.fromRGB(70,70,90))
+DropBtn.Text = "Teleport Islands ▼"
+DropBtn.ZIndex = 6
+
+local DropFrame = Instance.new("Frame", Body)
+DropFrame.Size = UDim2.new(1, -14, 0, 0)
+DropFrame.Position = UDim2.new(0, 7, 0, 165)
+DropFrame.BackgroundColor3 = Color3.fromRGB(45,45,45)
+DropFrame.Visible = false
+DropFrame.ZIndex = 6
+DropFrame.ClipsDescendants = true
+AddCorner(DropFrame, 10)
+
+local Scroll = Instance.new("ScrollingFrame", DropFrame)
+Scroll.Size = UDim2.new(1, 0, 1, 0)
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
+Scroll.ScrollBarThickness = 2
+Scroll.BackgroundTransparency = 1
+Scroll.ZIndex = 7
+
+local UIList = Instance.new("UIListLayout", Scroll)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Padding = UDim.new(0, 5)
+
+local Padding = Instance.new("UIPadding", Scroll)
+Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingBottom = UDim.new(0, 3)
+Padding.PaddingRight = UDim.new(0, 3)
+Padding.PaddingLeft = UDim.new(0, 7)
+
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
+end)
+
+
+for id, data in pairs(islandCoords) do
+    local Btn = Instance.new("TextButton", Scroll)
+    Btn.Size = UDim2.new(1, -6, 0, 24)
+    Btn.BackgroundColor3 = Color3.fromRGB(70,70,100)
+    Btn.BackgroundTransparency = 0.2
+    Btn.Text = data.name
+    Btn.TextColor3 = Color3.fromRGB(230,230,230)
+    Btn.Font = Enum.Font.GothamMedium
+    Btn.TextSize = 12
+    Btn.ZIndex = 8
+    AddCorner(Btn, 6)
+    HoverEffect(Btn)
+
+    Btn.MouseButton1Click:Connect(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(data.position)
+        end
+    end)
+end
+
+DropBtn.MouseButton1Click:Connect(function()
+    local state = not DropFrame.Visible
+    if state then
+        DropFrame.Visible = true
+        DropFrame.Size = UDim2.new(1, -14, 0, 0)
+        Tween(DropFrame, {Size = UDim2.new(1,-14,0,96)}, 0.25)
+        DropBtn.Text = "Teleport Islands ▲"
+    else
+        Tween(DropFrame, {Size = UDim2.new(1,-14,0,0)}, 0.25)
+        task.delay(0.25, function()
+            DropFrame.Visible = false
+        end)
+        DropBtn.Text = "Teleport Islands ▼"
+    end
+end)
+
+----------------------------------------------------------------
+-- MINIMIZE
+----------------------------------------------------------------
+local minimized = false
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+
+    if minimized then
+        Tween(Frame, {Size = UDim2.new(0,224,0,31)}, 0.25)
+        Body.Visible = false
+        MinBtn.Text = "+"
+    else
+        Body.Visible = true
+        Tween(Frame, {Size = UDim2.new(0,224,0,225)}, 0.25)
+        MinBtn.Text = "–"
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+----------------------------------------------------------------
+-- DRAGGING
+----------------------------------------------------------------
 local dragging = false
 local dragStart, startPos
 
@@ -122,9 +309,39 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--------------------------------
--- HELPER FUNCTIONS
--------------------------------
+----------------------------------------------------------------
+-- ANTI AFK
+----------------------------------------------------------------
+local function enableAntiAFKBtn()
+    local plr = Players.LocalPlayer
+    if getconnections then
+        for _, c in pairs(getconnections(plr.Idled)) do
+            if c.Disable then c:Disable()
+            elseif c.Disconnect then c:Disconnect() end
+        end
+    else
+        plr.Idled:Connect(function()
+            vu:CaptureController()
+            vu:ClickButton2(Vector2.new())
+        end)
+    end
+end
+
+AntiAFKBtn.MouseButton1Click:Connect(function()
+    AntiAFKBtnEnabled = not AntiAFKBtnEnabled
+    if AntiAFKBtnEnabled then
+        enableAntiAFKBtn()
+        AntiAFKBtn.Text = "Anti AFK: ON"
+        Tween(AntiAFKBtn, {BackgroundColor3 = Color3.fromRGB(40,120,40)}, 0.2)
+    else
+        AntiAFKBtn.Text = "Anti AFK: OFF"
+        Tween(AntiAFKBtn, {BackgroundColor3 = Color3.fromRGB(60,60,60)}, 0.2)
+    end
+end)
+
+----------------------------------------------------------------
+-- AUTOFISH
+----------------------------------------------------------------
 local function mouseInUI()
     local mouse = UIS:GetMouseLocation()
     local abs = Frame.AbsolutePosition
@@ -133,90 +350,103 @@ local function mouseInUI()
        and mouse.Y >= abs.Y and mouse.Y <= abs.Y + size.Y
 end
 
-local function safeClick()
-    if not mouseInUI() then
-        VIM:SendMouseButtonEvent(0,0,0,true,game,0)
-        VIM:SendMouseButtonEvent(0,0,0,false,game,0)
-    end
-end
+local function PerformCast()
+    if casting or not FishingSettings.Enabled then return end
+    casting = true
 
-local function performNormalCast()
-    if mouseInUI() then return end
-    equip:FireServer(1)
-end
-
-local function performPerfectCast()
-    if mouseInUI() then return end
     local bar = LocalPlayer.PlayerGui:FindFirstChild("Charge")
         and LocalPlayer.PlayerGui.Charge.Main.CanvasGroup.Bar
-    if not bar then return end
 
-    safeClick()
-    if con then con:Disconnect() con=nil end
-    con = bar:GetPropertyChangedSignal("Size"):Connect(function()
-        local y = bar.Size.Y.Scale
-        if y >= 0.97 and y < 0.99 then
-            safeClick()
-            finishMini:FireServer()
-            con:Disconnect()
-            con=nil
-        end
-    end)
-end
-
--------------------------------
--- MAIN LOOP (THROTTLED)
--------------------------------
-task.spawn(function()
-    while true do
+    if FishingSettings.Mode == "Normal" then
+        equip:FireServer(1)
+        VIM:SendMouseButtonEvent(0,0,0,true,game,0)
         task.wait(0.2)
-        if FishingSettings.Enabled and not casting and not mouseInUI() then
-            casting = true
-            if FishingSettings.Mode == "Normal" then
-                performNormalCast()
-            else
-                performPerfectCast()
-            end
+        VIM:SendMouseButtonEvent(0,0,0,false,game,0)
+        task.wait(1)
+        casting = false
+        return
+    end
+
+    if not bar then casting = false return end
+
+    equip:FireServer(1)
+	VIM:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    local con
+    con = bar:GetPropertyChangedSignal("Size"):Connect(function()
+        if bar.Size.Y.Scale > 0.98 then
+			VIM:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            con:Disconnect()
+            task.wait(0.12)
             casting = false
         end
-    end
-end)
+    end)
 
--- AutoClick loop
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if FishingSettings.Enabled and not mouseInUI() then
-            local fm = LocalPlayer.PlayerGui:FindFirstChild("Fishing")
-                and LocalPlayer.PlayerGui.Fishing:FindFirstChild("Main")
-            if fm and fm.Size.Y.Scale <= 0.95 then
-                safeClick()
-            end
-        end
-    end
-end)
+    task.wait(1.4)
+    casting = false
+end
 
--------------------------------
--- BUTTON HANDLERS
--------------------------------
 ToggleBtn.MouseButton1Click:Connect(function()
     FishingSettings.Enabled = not FishingSettings.Enabled
     ToggleBtn.Text = FishingSettings.Enabled and "AutoCast: ON" or "AutoCast: OFF"
-    ToggleBtn.BackgroundColor3 = FishingSettings.Enabled and Color3.fromRGB(60,120,60) or Color3.fromRGB(50,50,50)
+    Tween(ToggleBtn, {
+        BackgroundColor3 = FishingSettings.Enabled
+            and Color3.fromRGB(40,120,40)
+            or Color3.fromRGB(60,60,60)
+    }, 0.2)
 end)
 
 ModeBtn.MouseButton1Click:Connect(function()
-    FishingSettings.Mode = (FishingSettings.Mode=="Normal") and "Perfect" or "Normal"
-    ModeBtn.Text = "Mode: "..FishingSettings.Mode
+    FishingSettings.Mode = FishingSettings.Mode == "Normal" and "Perfect" or "Normal"
+    ModeBtn.Text = "Mode: " .. FishingSettings.Mode
+
+    Tween(ModeBtn, {
+        BackgroundColor3 = FishingSettings.Mode == "Perfect"
+            and Color3.fromRGB(40,120,40)
+            or Color3.fromRGB(55,55,55)
+    }, 0.2)
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    FishingSettings.Enabled = false
-    if con then con:Disconnect() con=nil end
-    gui:Destroy()
+----------------------------------------------------------------
+-- LOOPS
+----------------------------------------------------------------
+task.spawn(function()
+    while true do
+        task.wait(0.08)
+
+        if FishingSettings.Enabled and not mouseInUI() then
+            local fm = LocalPlayer.PlayerGui:FindFirstChild("Fishing")
+                and LocalPlayer.PlayerGui.Fishing:FindFirstChild("Main")
+
+            -- pilih antara modeClick atau modeAuto dengan `then`
+            if FishingSettings.modeClick == true then
+                if fm and fm.Position and fm.Position.Y and fm.Position.Y.Scale < 0.95 then
+                    task.wait(0.01)
+                    VIM:SendMouseButtonEvent(0,0,0,true,game,0)
+                    VIM:SendMouseButtonEvent(0,0,0,false,game,0)
+                end
+
+            elseif FishingSettings.modeAuto == true then
+                if fm and fm.Position and fm.Position.Y and fm.Position.Y.Scale < 0.95 then
+                    task.wait(0.5)
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("Packages")
+                        :WaitForChild("_Index")
+                        :WaitForChild("sleitnick_net@0.2.0")
+                        :WaitForChild("net")
+                        :WaitForChild("RE/FishingCompleted")
+                        :FireServer()
+                end
+            end
+        end
+    end
 end)
 
-MinBtn.MouseButton1Click:Connect(function()
-    guiVisible = not guiVisible
-    Frame.Visible = guiVisible
+
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if FishingSettings.Enabled then
+            PerformCast()
+        end
+    end
 end)
