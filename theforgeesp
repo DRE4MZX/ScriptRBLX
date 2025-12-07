@@ -1,0 +1,235 @@
+local ROOT_VOLCANIC = workspace.Rocks.Island2VolcanicDepths
+local ROOT_CAVE = workspace.Rocks.Island2CaveLavaClosed
+
+local LISTEN_VOLCANIC = false
+local LISTEN_BASALT = false
+
+local connections_volcanic = {}
+local connections_basalt = {}
+
+local espObjects = {}
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local window = Instance.new("Frame")
+window.Size = UDim2.new(0, 260, 0, 180)
+window.Position = UDim2.new(0, 70, 0, 100)
+window.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+window.BorderSizePixel = 0
+window.Active = true
+window.Parent = gui
+
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 28)
+header.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+header.BorderSizePixel = 0
+header.Parent = window
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -35, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Ore ESP Panel"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -28, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextScaled = true
+closeBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+closeBtn.BorderSizePixel = 0
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = header
+
+local btnVolcanic = Instance.new("TextButton")
+btnVolcanic.Size = UDim2.new(0, 220, 0, 40)
+btnVolcanic.Position = UDim2.new(0, 20, 0, 45)
+btnVolcanic.Text = "Volcanic Rock: OFF"
+btnVolcanic.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+btnVolcanic.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnVolcanic.Font = Enum.Font.GothamBold
+btnVolcanic.TextSize = 15
+btnVolcanic.Parent = window
+
+local btnBasalt = Instance.new("TextButton")
+btnBasalt.Size = UDim2.new(0, 220, 0, 40)
+btnBasalt.Position = UDim2.new(0, 20, 0, 95)
+btnBasalt.Text = "Basalt Vein: OFF"
+btnBasalt.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+btnBasalt.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnBasalt.Font = Enum.Font.GothamBold
+btnBasalt.TextSize = 15
+btnBasalt.Parent = window
+
+local dragging = false
+local dragStart
+local startPos
+
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = window.Position
+	end
+end)
+
+header.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		window.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	window.Visible = false
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.RightAlt then
+		window.Visible = not window.Visible
+	end
+end)
+
+local function clearESP()
+	for _, obj in ipairs(espObjects) do
+		if obj and obj.Destroy then obj:Destroy() end
+	end
+	espObjects = {}
+end
+
+local function addHighlight(model, color)
+	local h = Instance.new("Highlight")
+	h.FillColor = color
+	h.FillTransparency = 0.5
+	h.OutlineColor = color
+	h.OutlineTransparency = 0
+	h.Adornee = model
+	h.Parent = model
+	table.insert(espObjects, h)
+end
+
+local function addSurfaceLabel(part, text)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = part
+	billboard.Size = UDim2.new(0, 100, 0, 30)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = part
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 1, 0)
+	frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	frame.BackgroundTransparency = 0.4
+	frame.Parent = billboard
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.GothamBold
+	label.Parent = frame
+
+	table.insert(espObjects, billboard)
+end
+
+local function listenOre(root, modelName, connTable, onStateChange)
+	for _, d in ipairs(root:GetDescendants()) do
+		if d:IsA("Model") and d.Name == modelName then
+			
+			addHighlight(d, Color3.fromRGB(255, 120, 0))
+
+			local c = d.ChildAdded:Connect(function(child)
+				if onStateChange() and child:IsA("Model") and child.Name:lower() == "ore" then
+					task.wait()
+					local oreType = child:GetAttribute("Ore") or "Unknown"
+
+					addHighlight(child, Color3.fromRGB(0, 150, 255))
+
+					local part = child:FindFirstChildWhichIsA("BasePart")
+					if part then addSurfaceLabel(part, oreType) end
+
+					print("[NEW ORE]", oreType)
+				end
+			end)
+			table.insert(connTable, c)
+
+			for _, child in ipairs(d:GetChildren()) do
+				if child:IsA("Model") and child.Name:lower() == "ore" then
+					local oreType = child:GetAttribute("Ore") or "Unknown"
+
+					addHighlight(child, Color3.fromRGB(0, 150, 255))
+
+					local part = child:FindFirstChildWhichIsA("BasePart")
+					if part then addSurfaceLabel(part, oreType) end
+
+					print("[ORE AWAL]", oreType)
+				end
+			end
+		end
+	end
+end
+
+local function stopVolcanic()
+	for _, c in ipairs(connections_volcanic) do if c.Disconnect then c:Disconnect() end end
+	connections_volcanic = {}
+	LISTEN_VOLCANIC = false
+	btnVolcanic.Text = "Volcanic Rock: OFF"
+	btnVolcanic.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+	clearESP()
+end
+
+local function startVolcanic()
+	LISTEN_VOLCANIC = true
+	btnVolcanic.Text = "Volcanic Rock: ON"
+	btnVolcanic.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+
+	listenOre(ROOT_VOLCANIC, "Volcanic Rock", connections_volcanic, function()
+		return LISTEN_VOLCANIC
+	end)
+end
+
+local function stopBasalt()
+	for _, c in ipairs(connections_basalt) do if c.Disconnect then c:Disconnect() end end
+	connections_basalt = {}
+	LISTEN_BASALT = false
+	btnBasalt.Text = "Basalt Vein: OFF"
+	btnBasalt.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+	clearESP()
+end
+
+local function startBasalt()
+	LISTEN_BASALT = true
+	btnBasalt.Text = "Basalt Vein: ON"
+	btnBasalt.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+
+	listenOre(ROOT_CAVE, "Basalt Vein", connections_basalt, function()
+		return LISTEN_BASALT
+	end)
+end
+
+btnVolcanic.MouseButton1Click:Connect(function()
+	if LISTEN_VOLCANIC then stopVolcanic() else startVolcanic() end
+end)
+
+btnBasalt.MouseButton1Click:Connect(function()
+	if LISTEN_BASALT then stopBasalt() else startBasalt() end
+end)
