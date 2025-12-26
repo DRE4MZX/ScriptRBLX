@@ -1,0 +1,92 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "DRMHUB - Blade Ball",
+	LoadingTitle = "Blade Ball",
+	LoadingSubtitle = "by Dreamz",
+	ConfigurationSaving = {
+		Enabled = false
+	},
+	KeySystem = false
+})
+
+local AutoParryTab = Window:CreateTab("Auto Parry", 4483362458)
+local VisualTab = Window:CreateTab("Visual", 4483362458)
+local SettingsTab = Window:CreateTab("Settings", 4483362458)
+
+AutoParryTab:CreateButton({
+	Name = "Start Auto Parry",
+	Callback = function()
+		startScript()
+	end
+})
+
+AutoParryTab:CreateButton({
+	Name = "Stop Auto Parry",
+	Callback = function()
+		stopScript()
+	end
+})
+
+VisualTab:CreateToggle({
+	Name = "Visualizações",
+	CurrentValue = true,
+	Callback = function(Value)
+		Visualization.Enabled = Value
+		if not Value then
+			Visualization:Cleanup()
+		end
+	end
+})
+
+VisualTab:CreateToggle({
+	Name = "ESP Players",
+	CurrentValue = true,
+	Callback = function(Value)
+		for _, esp in pairs(Visualization.PlayerESP) do
+			if esp.Billboard then
+				esp.Billboard.Enabled = Value
+			end
+		end
+	end
+})
+
+VisualTab:CreateToggle({
+	Name = "ESP Balls",
+	CurrentValue = true,
+	Callback = function(Value)
+		for _, esp in pairs(Visualization.BallESP) do
+			if esp.Billboard then
+				esp.Billboard.Enabled = Value
+			end
+		end
+	end
+})
+
+VisualTab:CreateToggle({
+	Name = "Lines",
+	CurrentValue = true,
+	Callback = function(Value)
+		for _, line in pairs(Visualization.Lines) do
+			if line.Beam then
+				line.Beam.Enabled = Value
+			end
+		end
+	end
+})
+
+SettingsTab:CreateDropdown({
+	Name = "Parry Type",
+	Options = {"Random", "Camera", "Backwards"},
+	CurrentOption = "Random",
+	Callback = function(Option)
+		Auto_Parry.Parry_Type = Option
+	end
+})
+
+Rayfield:Notify({
+	Title = "DRMHUB - Blade Ball",
+	Content = "Loaded successfully",
+	Duration = 4,
+	Image = 4483362458
+})
