@@ -145,7 +145,7 @@ _G.SECURITY_LOGGER = SECURITY_LOGGER
 -- ║          DMZ HUB V5 - MAIN SCRIPT STARTS HERE                  ║
 -- ╚════════════════════════════════════════════════════════════════╝
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DRE4MZX/RBLX_GUI/refs/heads/main/DMZHUBV6GUI"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DRE4MZX/RBLX_GUI/refs/heads/main/DMZHUBV6GUIs"))()
 
 local Window = Library:CreateWindow({
     Name = "DMZHUB",
