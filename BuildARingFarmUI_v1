@@ -9,9 +9,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(100, 200, 255),
 			Text = Color3.fromRGB(235, 238, 245),
 			TextInactive = Color3.fromRGB(155, 165, 180),
-			ToggleBgOff = Color3.fromRGB(35, 40, 50),
+			ToggleBgOff = Color3.fromRGB(45, 50, 62),
 			ToggleBtnBg = Color3.fromRGB(30, 35, 45),
-			ToggleDot = Color3.fromRGB(240, 245, 255),
+			ToggleDot = Color3.fromRGB(245, 248, 255),
 			SectionTitle = Color3.fromRGB(220, 230, 245),
 		},
 		Light = {
@@ -20,7 +20,7 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(100, 150, 255),
 			Text = Color3.fromRGB(30, 35, 50),
 			TextInactive = Color3.fromRGB(120, 130, 150),
-			ToggleBgOff = Color3.fromRGB(230, 235, 250),
+			ToggleBgOff = Color3.fromRGB(220, 225, 236),
 			ToggleBtnBg = Color3.fromRGB(245, 248, 255),
 			ToggleDot = Color3.fromRGB(255, 255, 255),
 			SectionTitle = Color3.fromRGB(40, 50, 80),
@@ -31,9 +31,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(80, 200, 255),
 			Text = Color3.fromRGB(225, 240, 255),
 			TextInactive = Color3.fromRGB(130, 160, 190),
-			ToggleBgOff = Color3.fromRGB(35, 50, 75),
+			ToggleBgOff = Color3.fromRGB(40, 55, 85),
 			ToggleBtnBg = Color3.fromRGB(30, 45, 65),
-			ToggleDot = Color3.fromRGB(220, 245, 255),
+			ToggleDot = Color3.fromRGB(230, 245, 255),
 			SectionTitle = Color3.fromRGB(180, 210, 240),
 		},
 		Cyberpunk = {
@@ -42,9 +42,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(255, 100, 200),
 			Text = Color3.fromRGB(255, 230, 250),
 			TextInactive = Color3.fromRGB(170, 120, 180),
-			ToggleBgOff = Color3.fromRGB(50, 30, 70),
+			ToggleBgOff = Color3.fromRGB(60, 35, 80),
 			ToggleBtnBg = Color3.fromRGB(40, 25, 55),
-			ToggleDot = Color3.fromRGB(255, 210, 240),
+			ToggleDot = Color3.fromRGB(255, 220, 240),
 			SectionTitle = Color3.fromRGB(220, 140, 200),
 		},
 		Matcha = {
@@ -53,9 +53,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(80, 220, 100),
 			Text = Color3.fromRGB(230, 248, 225),
 			TextInactive = Color3.fromRGB(140, 170, 140),
-			ToggleBgOff = Color3.fromRGB(45, 60, 45),
+			ToggleBgOff = Color3.fromRGB(55, 70, 55),
 			ToggleBtnBg = Color3.fromRGB(38, 50, 38),
-			ToggleDot = Color3.fromRGB(230, 255, 225),
+			ToggleDot = Color3.fromRGB(240, 255, 235),
 			SectionTitle = Color3.fromRGB(170, 210, 160),
 		},
 		Silver = {
@@ -64,9 +64,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(200, 210, 230),
 			Text = Color3.fromRGB(245, 250, 255),
 			TextInactive = Color3.fromRGB(140, 150, 165),
-			ToggleBgOff = Color3.fromRGB(55, 62, 75),
+			ToggleBgOff = Color3.fromRGB(58, 68, 82),
 			ToggleBtnBg = Color3.fromRGB(48, 55, 68),
-			ToggleDot = Color3.fromRGB(250, 255, 255),
+			ToggleDot = Color3.fromRGB(255, 255, 255),
 			SectionTitle = Color3.fromRGB(210, 220, 235),
 		},
 		White = {
@@ -75,7 +75,7 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(100, 150, 255),
 			Text = Color3.fromRGB(25, 30, 40),
 			TextInactive = Color3.fromRGB(130, 140, 155),
-			ToggleBgOff = Color3.fromRGB(240, 242, 250),
+			ToggleBgOff = Color3.fromRGB(235, 238, 245),
 			ToggleBtnBg = Color3.fromRGB(250, 252, 255),
 			ToggleDot = Color3.fromRGB(255, 255, 255),
 			SectionTitle = Color3.fromRGB(50, 60, 80),
@@ -86,9 +86,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(220, 230, 255),
 			Text = Color3.fromRGB(248, 250, 255),
 			TextInactive = Color3.fromRGB(160, 170, 190),
-			ToggleBgOff = Color3.fromRGB(60, 68, 85),
+			ToggleBgOff = Color3.fromRGB(65, 72, 95),
 			ToggleBtnBg = Color3.fromRGB(52, 60, 75),
-			ToggleDot = Color3.fromRGB(245, 250, 255),
+			ToggleDot = Color3.fromRGB(255, 255, 255),
 			SectionTitle = Color3.fromRGB(200, 215, 255),
 		},
 		Crimson = {
@@ -97,9 +97,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(255, 120, 120),
 			Text = Color3.fromRGB(255, 235, 235),
 			TextInactive = Color3.fromRGB(180, 120, 120),
-			ToggleBgOff = Color3.fromRGB(60, 30, 30),
+			ToggleBgOff = Color3.fromRGB(75, 40, 42),
 			ToggleBtnBg = Color3.fromRGB(50, 25, 25),
-			ToggleDot = Color3.fromRGB(255, 200, 200),
+			ToggleDot = Color3.fromRGB(255, 220, 220),
 			SectionTitle = Color3.fromRGB(230, 140, 140),
 		},
 		Gold = {
@@ -108,9 +108,9 @@ local dmzhublib = {
 			Accent = Color3.fromRGB(255, 220, 80),
 			Text = Color3.fromRGB(255, 250, 235),
 			TextInactive = Color3.fromRGB(180, 160, 110),
-			ToggleBgOff = Color3.fromRGB(70, 58, 35),
+			ToggleBgOff = Color3.fromRGB(78, 65, 42),
 			ToggleBtnBg = Color3.fromRGB(55, 48, 32),
-			ToggleDot = Color3.fromRGB(255, 255, 220),
+			ToggleDot = Color3.fromRGB(255, 250, 220),
 			SectionTitle = Color3.fromRGB(230, 210, 140),
 		},
 	},
@@ -273,7 +273,7 @@ function dmzhublib:CreateWindow(TitleText)
 	FloatingBtn.Position = UDim2.new(0.02, 0, 0.1, 0)
 	FloatingBtn.BackgroundTransparency = 0.2
 	FloatingBtn.BackgroundColor3 = Color3.fromRGB(35, 40, 50)
-	FloatingBtn.Image = "rbxassetid://95308792107685"
+	FloatingBtn.Image = "rbxassetid://89993877189290"
 	FloatingBtn.AutoButtonColor = false
 	FloatingBtn.ZIndex = 500
 	Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(0, 12)
@@ -497,7 +497,7 @@ end)
 			Duration = 4,
 		})
 		pcall(function()
-			setclipboard("https://discord.gg/Gr5UQUKp7")
+			setclipboard("https://discord.gg/Y75rWk9vMW")
 		end)
 	end)
 
