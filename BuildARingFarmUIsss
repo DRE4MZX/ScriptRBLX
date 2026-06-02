@@ -6,7 +6,7 @@ local dmzhublib = {
 		Dark = {
 			MainBg = Color3.fromRGB(20, 22, 26),
 			Stroke = Color3.fromRGB(100, 110, 125),
-			Accent = Color3.fromRGB(100, 200, 255),t
+			Accent = Color3.fromRGB(100, 200, 255),
 			Text = Color3.fromRGB(235, 238, 245),
 			TextInactive = Color3.fromRGB(155, 165, 180),
 			ToggleBgOff = Color3.fromRGB(35, 40, 50),
@@ -1331,6 +1331,8 @@ end)
 			ToggleStroke.Thickness = 1.5
 			ToggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 			ToggleStroke.Color = dmzhublib.Themes[dmzhublib.CurrentTheme].Stroke
+
+			local function UpdateStrokeVisual(isActive, themeName)
 				local palette = dmzhublib.Themes[themeName or dmzhublib.CurrentTheme]
 				if isActive then
 					TweenService:Create(
