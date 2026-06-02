@@ -1,0 +1,284 @@
+--// Dark Console GUI for Executor
+--// Features: Close, Minimize, Clear, Click-to-Copy, Drag, Resize
+--// Dark theme: black, white, gray
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LogService = game:GetService("LogService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Config theme
+local THEME = {
+    bg = Color3.fromRGB(0,0,0),
+    panel = Color3.fromRGB(30,30,30),
+    border = Color3.fromRGB(80,80,80),
+    text = Color3.fromRGB(255,255,255),
+    warn = Color3.fromRGB(255,200,0),
+    err  = Color3.fromRGB(255,80,80),
+    accent = Color3.fromRGB(100,100,100),
+    success = Color3.fromRGB(0,255,100)
+}
+
+local MAX_LINES = 500
+local TITLEBAR_H = 36
+local FONT = Enum.Font.Code
+local DEFAULT_SIZE = Vector2.new(700,380)
+local MIN_SIZE = Vector2.new(420,220)
+local TOGGLE_KEY = Enum.KeyCode.F9
+
+-- Gui root
+local gui = Instance.new("ScreenGui")
+gui.Name = "ExecutorConsole"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- IMPORTANT: ALWAYS ON TOP
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.DisplayOrder = 999999999 -- very high priority
+
+gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+-- Main frame
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(DEFAULT_SIZE.X, DEFAULT_SIZE.Y)
+main.Position = UDim2.fromOffset(60,60)
+main.BackgroundColor3 = THEME.panel
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,8)
+local border = Instance.new("UIStroke", main)
+border.Color = THEME.border
+border.Thickness = 1
+
+-- Titlebar
+local titlebar = Instance.new("Frame", main)
+titlebar.Size = UDim2.new(1,0,0,TITLEBAR_H)
+titlebar.BackgroundColor3 = THEME.bg
+titlebar.BorderSizePixel = 0
+
+local title = Instance.new("TextLabel", titlebar)
+title.Size = UDim2.new(1,-200,1,0)
+title.Position = UDim2.fromOffset(8,0)
+title.BackgroundTransparency = 1
+title.Font = FONT
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = THEME.text
+title.Text = " Console"
+
+-- Buttons
+local function makeButton(txt)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.fromOffset(36,TITLEBAR_H-8)
+    b.Font = FONT
+    b.TextSize = 16
+    b.Text = txt
+    b.TextColor3 = THEME.text
+    b.BackgroundColor3 = THEME.panel
+    b.AutoButtonColor = true
+    Instance.new("UICorner",b).CornerRadius = UDim.new(0,6)
+    local s = Instance.new("UIStroke",b)
+    s.Color = THEME.accent
+    s.Thickness = 1
+    return b
+end
+
+local btnRow = Instance.new("Frame", titlebar)
+btnRow.Size = UDim2.fromOffset(180,TITLEBAR_H)
+btnRow.Position = UDim2.new(1,-180,0,0)
+btnRow.BackgroundTransparency = 1
+local layout = Instance.new("UIListLayout", btnRow)
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+layout.VerticalAlignment = Enum.VerticalAlignment.Center
+layout.Padding = UDim.new(0,6)
+
+local btnClear = makeButton("Clear"); btnClear.Parent = btnRow
+local btnMin = makeButton("_"); btnMin.Parent = btnRow
+local btnClose = makeButton("X"); btnClose.Parent = btnRow
+
+-- Content
+local content = Instance.new("Frame", main)
+content.Size = UDim2.new(1,-16,1,-(TITLEBAR_H+16))
+content.Position = UDim2.fromOffset(8,TITLEBAR_H+8)
+content.BackgroundTransparency = 1
+
+local scroll = Instance.new("ScrollingFrame", content)
+scroll.Size = UDim2.fromScale(1,1)
+scroll.Active = true
+scroll.ScrollBarThickness = 8
+scroll.BackgroundColor3 = THEME.bg
+scroll.BorderSizePixel = 0
+Instance.new("UICorner",scroll).CornerRadius = UDim.new(0,6)
+
+local list = Instance.new("UIListLayout",scroll)
+list.FillDirection = Enum.FillDirection.Vertical
+list.SortOrder = Enum.SortOrder.LayoutOrder
+list.Padding = UDim.new(0,4)
+Instance.new("UIPadding",scroll).PaddingLeft = UDim.new(0,8)
+Instance.new("UIPadding",scroll).PaddingTop = UDim.new(0,8)
+
+-- Resize handle
+local handle = Instance.new("Frame",main)
+handle.AnchorPoint = Vector2.new(1,1)
+handle.Size = UDim2.fromOffset(12,12)
+handle.Position = UDim2.new(1,-6,1,-6)
+handle.BackgroundColor3 = THEME.accent
+Instance.new("UICorner",handle).CornerRadius = UDim.new(1,0)
+
+-- Copy feedback
+local copiedLabel = Instance.new("TextLabel", gui)
+copiedLabel.AnchorPoint = Vector2.new(0.5,0.5)
+copiedLabel.Position = UDim2.fromScale(0.5,0.1)
+copiedLabel.BackgroundTransparency = 1
+copiedLabel.TextColor3 = THEME.success
+copiedLabel.Font = FONT
+copiedLabel.TextSize = 18
+copiedLabel.Text = "Copied!"
+copiedLabel.Visible = false
+
+local function flashCopied()
+    copiedLabel.Visible = true
+    task.wait(0.7)
+    copiedLabel.Visible = false
+end
+
+-- State
+local minimized = false
+local preMinSize
+local lineCount = 0
+
+local function setCanvas()
+    scroll.CanvasSize = UDim2.fromOffset(0,list.AbsoluteContentSize.Y+16)
+    scroll.CanvasPosition = Vector2.new(0,math.max(0,list.AbsoluteContentSize.Y-scroll.AbsoluteWindowSize.Y))
+end
+list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(setCanvas)
+
+local function timeStamp()
+    local t = os.date("!*t")
+    return string.format("[%02d:%02d:%02d]",t.hour,t.min,t.sec)
+end
+
+local function addLine(message,messageType)
+    lineCount += 1
+    if lineCount > MAX_LINES then
+        local first = scroll:FindFirstChildWhichIsA("TextButton")
+        if first then first:Destroy() lineCount -= 1 end
+    end
+    local btn = Instance.new("TextButton")
+    btn.BackgroundTransparency = 1
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.TextYAlignment = Enum.TextYAlignment.Center
+    btn.TextWrapped = true
+    btn.Font = FONT
+    btn.TextSize = 14
+    btn.Size = UDim2.new(1,-8,0,0)
+    btn.AutomaticSize = Enum.AutomaticSize.Y
+    btn.RichText = false
+    btn.Text = string.format("%s %s",timeStamp(),message)
+
+    if messageType==Enum.MessageType.MessageOutput then
+        btn.TextColor3 = THEME.text
+    elseif messageType==Enum.MessageType.MessageWarning then
+        btn.TextColor3 = THEME.warn
+    elseif messageType==Enum.MessageType.MessageError then
+        btn.TextColor3 = THEME.err
+    else
+        btn.TextColor3 = THEME.text
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(message)
+            flashCopied()
+        else
+            warn("Clipboard API not available")
+        end
+    end)
+    btn.Parent = scroll
+end
+
+-- Buttons
+btnClear.MouseButton1Click:Connect(function()
+    for _,c in ipairs(scroll:GetChildren()) do
+        if c:IsA("TextButton") then c:Destroy() end
+    end
+    lineCount = 0
+    setCanvas()
+end)
+
+btnMin.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        preMinSize = main.Size
+        content.Visible = false
+        handle.Visible = false
+        main.Size = UDim2.fromOffset(main.AbsoluteSize.X,TITLEBAR_H+10)
+        btnMin.Text = "▢"
+    else
+        content.Visible = true
+        handle.Visible = true
+        main.Size = preMinSize or UDim2.fromOffset(DEFAULT_SIZE.X,DEFAULT_SIZE.Y)
+        btnMin.Text = "_"
+    end
+end)
+
+btnClose.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- Drag titlebar
+do
+    local dragging, dragStart, startPos
+    titlebar.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 then
+            dragging=true
+            dragStart=input.Position
+            startPos=main.Position
+            input.Changed:Connect(function()
+                if input.UserInputState==Enum.UserInputState.End then dragging=false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
+            local delta=input.Position-dragStart
+            main.Position=UDim2.fromOffset(startPos.X.Offset+delta.X,startPos.Y.Offset+delta.Y)
+        end
+    end)
+end
+
+-- Resize handle
+do
+    local resizing, startMouse, startSize
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 then
+            resizing=true
+            startMouse=input.Position
+            startSize=main.AbsoluteSize
+            input.Changed:Connect(function()
+                if input.UserInputState==Enum.UserInputState.End then resizing=false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and input.UserInputType==Enum.UserInputType.MouseMovement then
+            local delta=input.Position-startMouse
+            local newW=math.max(MIN_SIZE.X,startSize.X+delta.X)
+            local newH=math.max(MIN_SIZE.Y,startSize.Y+delta.Y)
+            main.Size=UDim2.fromOffset(newW,newH)
+        end
+    end)
+end
+
+-- Toggle console F9
+UserInputService.InputBegan:Connect(function(input,gpe)
+    if not gpe and input.KeyCode==TOGGLE_KEY then
+        gui.Enabled = not gui.Enabled
+    end
+end)
+
+-- Capture logs
+LogService.MessageOut:Connect(function(msg,msgType)
+    addLine(tostring(msg),msgType)
+end)
+
+addLine("Executor Console ready! Click log to copy text.",Enum.MessageType.MessageOutput)
+addLine("Use F9 to toggle, drag to move, corner to resize, Clear button to wipe logs.",Enum.MessageType.MessageOutput)
