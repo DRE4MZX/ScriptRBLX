@@ -6,7 +6,7 @@ local dmzhublib = {
 		Dark = {
 			MainBg = Color3.fromRGB(20, 22, 26),
 			Stroke = Color3.fromRGB(100, 110, 125),
-			Accent = Color3.fromRGB(100, 200, 255),
+			Accent = Color3.fromRGB(100, 200, 255),t
 			Text = Color3.fromRGB(235, 238, 245),
 			TextInactive = Color3.fromRGB(155, 165, 180),
 			ToggleBgOff = Color3.fromRGB(35, 40, 50),
@@ -1324,13 +1324,13 @@ end)
 			ToggleBtn.Size = UDim2.new(1, 0, 0, HasDesc and 52 or 36)
 			ToggleBtn.AutoButtonColor = false
 			ToggleBtn.Text = ""
-		ToggleBtn.BackgroundTransparency = 0.35
-		Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
+			ToggleBtn.BackgroundTransparency = 0.35
+			Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
 
+			local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
+			ToggleStroke.Thickness = 1.5
+			ToggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 			ToggleStroke.Color = dmzhublib.Themes[dmzhublib.CurrentTheme].Stroke
-			ToggleStroke.Transparency = 0.85
-
-			local function UpdateStrokeVisual(isActive, themeName)
 				local palette = dmzhublib.Themes[themeName or dmzhublib.CurrentTheme]
 				if isActive then
 					TweenService:Create(
